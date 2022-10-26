@@ -301,7 +301,7 @@ func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error
 	return res.RowsAffected()
 }
 
-func (session *Session) innerInsertMulti(rowsSlicePtr interface{}) (int64, error) {
+func (session *Session) innerReplaceMulti(rowsSlicePtr interface{}) (int64, error) {
 	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
 	if sliceValue.Kind() != reflect.Slice {
 		return 0, errors.New("needs a pointer to a slice")
@@ -529,7 +529,23 @@ func (session *Session) InsertMulti(rowsSlicePtr interface{}) (int64, error) {
 
 	return session.innerInsertMulti(rowsSlicePtr)
 }
+func (session *Session) ReplaceInsertMulti(rowsSlicePtr interface{}) (int64, error) {
+	if session.isAutoClose {
+		defer session.Close()
+	}
 
+	sliceValue := reflect.Indirect(reflect.ValueOf(rowsSlicePtr))
+	if sliceValue.Kind() != reflect.Slice {
+		return 0, ErrParamsType
+
+	}
+
+	if sliceValue.Len() <= 0 {
+		return 0, nil
+	}
+
+	return session.innerReplaceMulti(rowsSlicePtr)
+}
 func (session *Session) innerInsert(bean interface{}) (int64, error) {
 	if err := session.statement.setRefBean(bean); err != nil {
 		return 0, err
