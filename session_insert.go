@@ -463,6 +463,14 @@ func (session *Session) innerReplaceMulti(rowsSlicePtr interface{}) (int64, erro
 			session.engine.Quote(tableName),
 			quoteColumns(colNames, session.engine.Quote, ","),
 			strings.Join(colMultiPlaces, "),("))
+	} else if session.engine.dialect.DBType() == core.POSTGRES {
+		// postgres replace into
+		sql = fmt.Sprintf("INSERT INTO %s (%v) VALUES (%v) ON CONFLICT DO UPDATE SET %v",
+			session.engine.Quote(tableName),
+			quoteColumns(colNames, session.engine.Quote, ","),
+			strings.Join(colMultiPlaces, "),("),
+			strings.Join(colNames, "=EXCLUDED.")+"=EXCLUDED."+colNames[0])
+
 	} else {
 		sql = fmt.Sprintf("INSERT INTO %s (%v) VALUES (%v)",
 			session.engine.Quote(tableName),
